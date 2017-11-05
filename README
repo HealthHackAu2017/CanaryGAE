@@ -1,0 +1,18 @@
+CanaryGAE
+
+This is a platform for download, storage, analysis and presentation of large amounts of high resolution time series data. Our target application is the Canaria wearable PPG anv vitals monitor.
+
+There are three parts to the framework. 
+
+1. Google Cloud Storage Bucket - this can be set up from the desktop or done programmatically and is a way to store large data files in the cloud
+
+2. AppEngine Web Service - The appengine service can access files in the bucket and do automatic processes. The service is also able to provide web interfaces for patients to self-report and annotate data and clinitians to monitor data.
+
+3. DataLab Notebook - Using datalab a researcher can read and write files to the same bucket. This allows the appengine service to be able to present datasets that were created using 'hacked in' analysis code. The notebook runs Python and can manipulate data on cloud storage without the need to download any files.
+
+The Appengine and Notebook are provided and the storage bucket can be set up by a user account. 
+
+
+Deploying the app to http://canary-hh.appspot.com/: 
+gcloud app deploy --project canary-hh
+
