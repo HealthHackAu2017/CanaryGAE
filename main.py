@@ -1,17 +1,3 @@
-# Copyright 2016 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 # [START app]
 import logging
 
@@ -21,6 +7,9 @@ from canary import processCSV
 import google
 from model import EpisodeModel
 from google.appengine.ext import ndb
+import cloudstorage as gcs
+import os
+from google.appengine.api import app_identity
 
 # [END imports]
 
@@ -29,17 +18,51 @@ app = Flask(__name__)
 # [END create_app]
 
 
-# [START form]
-@app.route('/form')
-def form():
-    return render_template('form.html')
-# [END form]
+@app.route('/exp')
+def exp():
+    # Grab files from the datastore
+    bucket_name = app_identity.app_identity.get_default_gcs_bucket_name()
+    prefix = '/data'
+    bucket = '/' + bucket_name + prefix
+    stats = gcs.listbucket(bucket, max_keys=10)
+    filenames = []
+    for stat in stats:
+        filenames.append(stat.filename)
+        # read and extract the file data
+        #gcs_file = gcs.open(filename)
+        #self.response.write(gcs_file.readline())
+        #gcs_file.close()
+    
+    return render_template('exp.html',
+                       filenames=filenames)
 
-@app.route('/hack')
-def hack():
-    # Log the error and stacktrace.
-    return '<html><body>An internal awesome occurred.</html></body>'
-    #return render_template('form.html')
+@app.route('/fc')
+def fc():
+    #bucket_name = app_identity.app_identity.get_default_gcs_bucket_name()
+    filename = request.query_string
+    #bucket = '/' + bucket_name + '/' + file_name
+    gcs_file = gcs.open(filename)
+    line = gcs_file.read()
+    #gcs_file.read()
+    gcs_file.close()
+    return '<html><body>...' + line + '...</html></body>'
+
+
+@app.route('/cs')
+def cs():
+    bucket_name = app_identity.app_identity.get_default_gcs_bucket_name()
+    #bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+    #bucket_name = 'canary-hh.appspot.com'
+
+    bucket = '/' + bucket_name #canary-hh.appspot.com
+    stats = gcs.listbucket(bucket, max_keys=10)
+    x = ''
+    x += '<div>' + bucket_name + '</div>'
+    x += '<div>' + str(dir(stats)) + '</div>'
+    x += '<div>' + repr(stats) + '</div>'
+    for stat in stats:
+        x += '<div>x ' + repr(stat) + '</div>'
+    return '<html><body>...' + x + '...</html></body>'
 
 
 @app.route('/collect')
@@ -56,7 +79,6 @@ def collect():
     process_result = processCSV(data_response.content)
     
     return render_template('link.html', key=str(process_result))
-
 
 
 def isfloat(value):
@@ -79,14 +101,6 @@ def restore():
                            x_series=[1e-9 * (i - episode.start_time) for i in episode.somedata[0][0:2000]],
                            y_series=episode.somedata[9][0:2000])
 
-    #return str(episode)
-
-    #return str(episode.start_time) + "    " + str(episode.end_time) + "    " + str(episode.somedata[7])
-
-    # Create a GQL query
-    #q = EpisodeModel.query()
-    #q.filter('user =', 'BsB-87654')
-    #results = q.fetch()
 
 
 # [START submitted]
